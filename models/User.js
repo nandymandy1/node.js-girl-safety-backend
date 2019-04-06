@@ -35,6 +35,16 @@ const UserSchema = new Schema({
         type: String,
         default: '/images/default.png'
     },
+    trustContacts: [{
+        name: {
+            type: String,
+            required: true
+        },
+        phone: {
+            type: String,
+            required: true
+        }
+    }],
     date: {
         type: Date,
         default: Date.now

@@ -3,16 +3,14 @@ const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
 const bodyParser = require('body-parser');
-const jwt = require('jsonwebtoken');
-const jwtDecode = require('jwt-decode');
+
 
 // to enable the cross origin request
 const cors = require('cors');
 const passport = require('passport');
 // Bring in the socket.io
 const socket = require('socket.io');
-// Bring in the Authentication Module for the Socket IO
-var jwtAuth = require('socketio-jwt-auth');
+
 
 // Initailize the application
 const app = express();
@@ -58,17 +56,9 @@ const server = app.listen(port, () => {
 // Socket IO Setup
 const io = socket.listen(server);
 
-io.on('connection', socket => {
-    socket.on('chat-input', (payload) => {
-        console.log(payload);
-        // Decode the token
-        let userData = jwtDecode(payload.token.split(' ')[1]);
-        console.log(userData);
-        console.log((Date.now() / 1000));
-        if ((Date.now() / 1000) > userData.exp) {
-            console.log(true);
-        } else {
-            console.log(false);
-        }
-    });
-})
+// io.on('connection', socket => {
+//     console.log('user connected');
+//     socket.on('urgent-mode', (message) => {
+//         console.log(message);
+//     });
+// });

@@ -5,6 +5,8 @@ const jwt = require('jsonwebtoken');
 const key = require('../../config/db').secret;
 const passport = require('passport');
 const multer = require('multer');
+const http = require('http');
+var urlencode = require('urlencode');
 
 // Load User Model
 const User = require('../../models/User');
@@ -256,9 +258,7 @@ router.get('/radar-status', passport.authenticate('jwt', {
     }).sort({
         date: -1
     }).then(soss => {
-        return res.json({
-            radar: soss[0]
-        });
+        return res.json(soss[0]);
     });
 });
 
@@ -273,11 +273,67 @@ router.post('/radar-disable', passport.authenticate('jwt', {
     }).then(soss => {
         soss[0].active = false;
         soss[0].save();
-        return res.json({
-            succes: true,
-            radar: soss[0]
-        });
+        return res.json(soss[0]);
     });
+});
+
+// Add Trust Contacts
+router.post('/add-contacts', passport.authenticate('jwt', {
+    session: false
+}), (req, res) => {
+    User.findById(req.user._id)
+        .then(user => {
+            let newContact = {
+                name: req.body.name,
+                phone: req.body.phone
+            }
+            user.trustContacts.unshift(newContact);
+            user.save().then(user => res.json({
+                success: true,
+                message: "Contact added successfully."
+            }));
+        });
+});
+
+// Urgent mode enable for the sms service on the mobile
+router.post('/urgent-mode', passport.authenticate('jwt', {
+    session: false
+}), (req, res) => {
+
+    // Get the contacts from the database
+    User.findById(req.user._id)
+        .then(user => {
+            let contacts = user.trustContacts;
+            contacts.map(contact => {
+                let message = urlencode(`
+                    Dear ${contact.name}, Your Contact ${req.user.name} is in need of the urgent help due to some risky factors,
+                    Please follow the given location coordinates ${req.body.lat}, ${req.body.lng}. We have also informed to the local authorities.
+                `);
+                let toNumber = '+91' + contact.number;
+                let username = req.user.name;
+                let hash = 'ThWK94szfFg-8bS2DdO31HOlNhXUelOetNotHRqmMB'; // The hash key could be found under Help->All Documentation->Your hash key. Alternatively you can use your Textlocal password in plain text.
+                let sender = "Girl's Safety Center";
+                let data = 'username=' + username + '&hash=' + hash + '&sender=' + sender + '&numbers=' + toNumber + '&message=' + message;
+                var options = {
+                    host: 'api.textlocal.in',
+                    path: '/send?' + data
+                };
+                callback = function (response) {
+                    var str = ''; //another chunk of data has been recieved, so append it to `str`
+                    response.on('data', function (chunk) {
+                        str += chunk;
+                    }); //the whole response has been recieved, so we just print it out here
+                    response.on('end', function () {
+                        console.log(str);
+                    });
+                } //console.log('hello js'))
+                http.request(options, callback).end(); //url encode instalation need to use $ npm install urlencode
+                console.log(contact);
+            });
+            return res.json({
+                success: true
+            });
+        });
 });
 
 module.exports = router;
