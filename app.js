@@ -53,6 +53,11 @@ const server = app.listen(port, () => {
     console.log(`Server started on the port ${port}`);
 });
 
+
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/index.html'));
+});
+
 // Socket IO Setup
 const io = socket.listen(server);
 
